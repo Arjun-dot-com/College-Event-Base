@@ -19,7 +19,7 @@ from pydantic import BaseModel
 # Create database tables
 models.Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="Vardhaman Event Management API")
+app = FastAPI(title="Event Management API")
 
 app.add_middleware(
     CORSMiddleware,
@@ -30,7 +30,7 @@ app.add_middleware(
 )
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-SECRET_KEY = "your_super_secret_key_for_vardhaman"
+SECRET_KEY = "your_super_secret_key"
 ALGORITHM = "HS256"
 
 # --- Dependencies & Utilities ---
