@@ -87,6 +87,32 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     db.refresh(new_user)
     return new_user
 
+@app.delete("/events/{event_id}", status_code=status.HTTP_200_OK)
+def delete_event(event_id: int, db: Session = Depends(get_db)):
+    # 1. Find the event
+    event = db.query(models.Event).filter(models.Event.id == event_id).first()
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+        
+    # 2. Clean up associated data to prevent database errors
+    # Delete related feedback
+    db.query(models.Feedback).filter(models.Feedback.event_id == event_id).delete()
+    
+    # Delete related attendance records by finding all registrations for this event
+    registrations = db.query(models.Registration).filter(models.Registration.event_id == event_id).all()
+    reg_ids = [reg.id for reg in registrations]
+    if reg_ids:
+        db.query(models.Attendance).filter(models.Attendance.registration_id.in_(reg_ids)).delete(synchronize_session=False)
+        
+    # Delete the registrations themselves
+    db.query(models.Registration).filter(models.Registration.event_id == event_id).delete()
+
+    # 3. Finally, delete the event
+    db.delete(event)
+    db.commit()
+    
+    return {"message": f"Event '{event.title}' successfully deleted."}
+
 # --- NEW AUTHENTICATION ROUTE ---
 class LoginRequest(BaseModel):
     email: str
